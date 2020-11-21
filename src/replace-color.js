@@ -1,11 +1,12 @@
 const convertColor = require('./utils/convert-color')
 const getDelta = require('./utils/get-delta')
 const isNumber = require('./utils/is-number')
-const Jimp = require('jimp')
+// const Jimp = require('jimp')
+// TODO: [MM] why won't jimp import exactly?? 🤔
 const ReplaceColorError = require('./utils/replace-color-error')
 const validateColors = require('./utils/validate-colors')
 
-module.exports = ({
+module.exports = (Jimp, {
   image,
   colors,
   formula = 'E00',
