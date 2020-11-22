@@ -4,7 +4,7 @@ const isNumber = require('./utils/is-number')
 // const Jimp = require('jimp')
 // TODO: [MM] why won't jimp import exactly?? 🤔
 const ReplaceColorError = require('./utils/replace-color-error')
-const validateColors = require('./utils/validate-colors')
+// const validateColors = require('./utils/validate-colors')
 
 module.exports = (Jimp, {
   image,
@@ -28,8 +28,12 @@ module.exports = (Jimp, {
       return callback(new ReplaceColorError('PARAMETER_REQUIRED', 'options.image'))
     }
 
-    const colorsValidationError = validateColors(colors)
-    if (colorsValidationError) {
+    // const colorsValidationError = validateColors(colors)
+    // if (colorsValidationError) {
+    //   return callback(new ReplaceColorError(colorsValidationError.code, colorsValidationError.field))
+    // }
+
+    if (!colors || colors.length === 0) {
       return callback(new ReplaceColorError(colorsValidationError.code, colorsValidationError.field))
     }
 
@@ -43,8 +47,11 @@ module.exports = (Jimp, {
 
     Jimp.read(image)
       .then((jimpObject) => {
-        const targetLABColor = convertColor(colors.type, 'lab', colors.targetColor)
-        const replaceRGBColor = convertColor(colors.type, 'rgb', colors.replaceColor)
+        // const targetLABColor = convertColor(colors.type, 'lab', colors.targetColor)
+        // const replaceRGBColor = convertColor(colors.type, 'rgb', colors.replaceColor)
+
+        let targetLABColors = colors.map(color => convertColor(color.type, 'lab', color.targetColor))
+        let replaceRGBColors = colors.map(color => convertColor(color.type, 'rgb', color.replaceColor))
 
         jimpObject.scan(0, 0, jimpObject.bitmap.width, jimpObject.bitmap.height, (x, y, idx) => {
           const currentLABColor = convertColor('rgb', 'lab', [
@@ -53,12 +60,15 @@ module.exports = (Jimp, {
             jimpObject.bitmap.data[idx + 2]
           ])
 
-          if (getDelta(currentLABColor, targetLABColor, formula) <= deltaE) {
-            jimpObject.bitmap.data[idx] = replaceRGBColor[0]
-            jimpObject.bitmap.data[idx + 1] = replaceRGBColor[1]
-            jimpObject.bitmap.data[idx + 2] = replaceRGBColor[2]
-            if (replaceRGBColor[3] !== null) jimpObject.bitmap.data[idx + 3] = replaceRGBColor[3]
-          }
+          targetLABColors.forEach((targetLABColor, index) => {
+            if (getDelta(currentLABColor, targetLABColor, formula) <= deltaE) {
+              let replaceRGBColor = replaceRGBColors[index]
+              jimpObject.bitmap.data[idx] = replaceRGBColor[0]
+              jimpObject.bitmap.data[idx + 1] = replaceRGBColor[1]
+              jimpObject.bitmap.data[idx + 2] = replaceRGBColor[2]
+              if (replaceRGBColor[3] !== null) jimpObject.bitmap.data[idx + 3] = replaceRGBColor[3]
+            }
+          })
         })
 
         callback(null, jimpObject)
